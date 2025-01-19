@@ -15,8 +15,14 @@ class MainActivity : ComponentActivity() {
     private lateinit var filePickerLauncher: ActivityResultLauncher<String>
     private var filePickContinuation: (String?) -> Unit = {}
 
+    companion object {
+        var instance: MainActivity? = null
+    }
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        instance = this
 
         filePickerLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
             val filePath = uri?.let { uriToFilePath(this, it) }

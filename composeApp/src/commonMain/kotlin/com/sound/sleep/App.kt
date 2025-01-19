@@ -23,6 +23,7 @@ interface AudioPlayer {
 
 expect suspend fun pickFile(initialDir: String? = null): String?
 expect fun createAudioPlayer(filePath: String): AudioPlayer
+expect fun releasePlayer(player: AudioPlayer?)
 expect fun loadSavedState(): SavedState?
 expect fun saveState(state: SavedState)
 
@@ -101,6 +102,10 @@ fun App() {
                 newFile?.let {
                     currentFile = it
                     fileName = it.substringAfterLast('/')
+
+                    // Release existing player if any
+                    releasePlayer(player)
+
                     player = createAudioPlayer(it)
                     position = 0L
                     player?.seekTo(position)
@@ -108,6 +113,7 @@ fun App() {
                 }
             }
         }) { Text("Pick File") }
+
 
         // Sleep Timer UI
         Row {

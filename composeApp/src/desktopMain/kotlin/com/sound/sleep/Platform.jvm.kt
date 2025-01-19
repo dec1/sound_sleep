@@ -25,6 +25,8 @@ actual suspend fun pickFile(initialDir: String?): String? {
     }
 }
 
+
+
 class DesktopAudioPlayer(private val filePath: String) : AudioPlayer {
     private val clip: Clip
     private val audioStream: AudioInputStream
@@ -67,6 +69,10 @@ class DesktopAudioPlayer(private val filePath: String) : AudioPlayer {
 
 actual fun createAudioPlayer(filePath: String): AudioPlayer {
     return DesktopAudioPlayer(filePath)
+}
+
+actual fun releasePlayer(player: AudioPlayer?) {
+    // No-op for JVM
 }
 
 actual fun loadSavedState(): SavedState? {

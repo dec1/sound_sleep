@@ -3,7 +3,6 @@ package com.sound.sleep
 import android.os.Build
 import android.app.Activity
 import android.content.Context
-
 import android.media.MediaPlayer
 import android.net.Uri
 import android.provider.OpenableColumns
@@ -11,10 +10,10 @@ import androidx.activity.result.ActivityResultLauncher
 import java.io.File
 import java.io.FileOutputStream
 
-//-----------------------------------------
 class AndroidPlatform : Platform {
     override val name: String = "Android ${Build.VERSION.SDK_INT}"
 }
+
 actual fun getPlatform(): Platform = AndroidPlatform()
 //-----------------------------------------
 
@@ -23,11 +22,18 @@ actual fun createAudioPlayer(filePath: String): AudioPlayer {
     return AndroidAudioPlayer(filePath)
 }
 
+actual fun releasePlayer(player: AudioPlayer?) {
+    if (player is AndroidAudioPlayer) {
+        player.release()
+    }
+}
+
 class AndroidAudioPlayer(private val filePath: String) : AudioPlayer {
     private val mediaPlayer: MediaPlayer = MediaPlayer().apply {
         setDataSource(filePath)
         prepare()
     }
+
 
     override fun play() {
         mediaPlayer.start()
@@ -47,15 +53,12 @@ class AndroidAudioPlayer(private val filePath: String) : AudioPlayer {
     override val duration: Long
         get() = mediaPlayer.duration.toLong()
 
-    // Clean up MediaPlayer resources
     fun release() {
         mediaPlayer.release()
     }
 }
 
-// Persistence using SharedPreferences
 actual fun loadSavedState(): SavedState? {
-    // Assuming you have access to a Context
     val context = getAppContext() ?: return null
     val prefs = context.getSharedPreferences("audio_prefs", Context.MODE_PRIVATE)
     val filePath = prefs.getString("filePath", null) ?: return null
@@ -73,28 +76,17 @@ actual fun saveState(state: SavedState) {
     }
 }
 
-// File Picker Implementation
-private var filePickerLauncher: ActivityResultLauncher<String>? = null
-private var currentActivity: Activity? = null
-
 actual suspend fun pickFile(initialDir: String?): String? {
-    val activity = currentActivity ?: return null
-    // Cast activity to MainActivity to access pickAudioFile
-    return if (activity is MainActivity) {
-        activity.pickAudioFile()
-    } else {
-        null
-    }
+    val activity = MainActivity.instance ?: return null
+    return activity.pickAudioFile()
 }
 
-// Helper to convert Uri to File Path (Simplified)
 fun uriToFilePath(context: Context, uri: Uri): String? {
     val cursor = context.contentResolver.query(uri, null, null, null, null) ?: return null
     cursor.use {
         if (it.moveToFirst()) {
             val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-            if (nameIndex == -1) return null  // Ensure the column exists
-
+            if (nameIndex == -1) return null
             val displayName = it.getString(nameIndex)
             val file = File(context.cacheDir, displayName)
             context.contentResolver.openInputStream(uri)?.use { inputStream ->
@@ -108,9 +100,6 @@ fun uriToFilePath(context: Context, uri: Uri): String? {
     return null
 }
 
-
-// Mock function to get application context
 fun getAppContext(): Context? {
-    // Implement a way to provide application context, e.g., via a singleton or dependency injection
-    return null // Replace with actual context retrieval
+    return MyApp.applicationContext()
 }
